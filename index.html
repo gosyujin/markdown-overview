@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!--
+    外部通信・インライン実行を CSP で禁止している。
+    connect-src 'none' により fetch / XHR / WebSocket は一切できない。画像は data: のみ許可。
+  -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src data:; connect-src 'none'; font-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex">
+  <title>Markdown Overview</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23c2410c'/%3E%3Cpath d='M7 23V9h3l3 5 3-5h3v14h-3v-8l-3 5-3-5v8z' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="bar">
+    <h1 class="brand">Markdown Overview</h1>
+    <span class="badge" title="このページは外部へ通信せず、入力内容をlocalStorage等にも保存しません。リロードで全て消えます。">🔒 通信・保存なし</span>
+    <span class="spacer"></span>
+    <span id="status" class="status" aria-live="polite"></span>
+    <div class="seg" role="group" aria-label="表示モード">
+      <button type="button" id="mode-raw" aria-pressed="true">Raw</button>
+      <button type="button" id="mode-mask" aria-pressed="false">Mask</button>
+    </div>
+    <button type="button" id="btn-rules">マスク設定 <span id="rules-count" class="count">0</span></button>
+    <button type="button" id="btn-toggle-input" aria-pressed="false">入力欄を隠す</button>
+    <button type="button" id="btn-clear">クリア</button>
+    <button type="button" id="btn-theme" title="テーマ切り替え">自動</button>
+  </header>
+
+  <main id="layout">
+    <section id="input-pane" aria-label="入力">
+      <textarea id="src" autocomplete="off" autocapitalize="off" spellcheck="false"
+                placeholder="ここに Markdown を貼り付けてください（Claude の回答をそのまま貼れます）"></textarea>
+      <div class="file-row">
+        <label class="file-btn">
+          <input type="file" id="file" accept=".md,.markdown,.txt,.text,text/*">
+          ファイルを選択
+        </label>
+        <span class="hint">または、ファイルをこのページにドロップ</span>
+      </div>
+    </section>
+
+    <article id="preview" class="md" aria-label="プレビュー">
+      <div class="empty">
+        <p class="empty-title">左の入力欄に Markdown を貼り付けると、ここに表示されます。</p>
+        <ul>
+          <li>コードブロックと表は、ホバー／フォーカスで「コピー」ボタンが出ます。</li>
+          <li><b>Mask</b> に切り替えると、<b>マスク設定</b>の定義に従って語句を置換して表示します。</li>
+          <li>貼り付けた内容は、このタブのメモリ上にしか存在しません。</li>
+        </ul>
+      </div>
+    </article>
+  </main>
+
+  <dialog id="rules-dialog" aria-labelledby="rules-title">
+    <form method="dialog" class="dlg">
+      <h2 id="rules-title">マスク設定</h2>
+      <p class="dlg-note">
+        1行に1つ、<code>元の語句, 置換後の語句</code> の形式で書きます（<code>=&gt;</code> / <code>-&gt;</code> / タブ区切りも可。<code>#</code> 始まりはコメント）。
+        長い語句が優先され、大文字小文字は区別します。
+      </p>
+      <textarea id="rules-src" autocomplete="off" autocapitalize="off" spellcheck="false" rows="9"
+                placeholder="丸丸システム, システムA&#10;山田商事 => 取引先B"></textarea>
+      <p id="rules-info" class="dlg-info" aria-live="polite"></p>
+
+      <details class="dlg-sec" open>
+        <summary>この定義はどこに保存される？</summary>
+        <p>
+          <b>どこにも保存されません。</b>このタブのメモリ上だけに保持され、リロードや閉じると消えます（localStorage・Cookie・通信は使いません）。
+          毎回入力するのが面倒な場合は、下で<b>パスフレーズ付きの暗号化ファイル</b>として手元に保存し、次回そのファイルを読み込んでください。
+          暗号化はお使いのブラウザ内（AES-256-GCM / PBKDF2）で完結します。
+        </p>
+      </details>
+
+      <div class="dlg-row">
+        <label for="pass">パスフレーズ</label>
+        <input type="password" id="pass" autocomplete="off" placeholder="8文字以上（保存・読み込み共通）">
+      </div>
+      <div class="dlg-actions">
+        <label class="file-btn">
+          <input type="file" id="rules-file" accept=".json,.txt,.enc,text/*,application/json">
+          ファイルから読み込む
+        </label>
+        <button type="button" id="rules-save-enc">暗号化して保存</button>
+        <button type="button" id="rules-save-plain" class="subtle">平文で保存</button>
+        <button type="button" id="rules-clear" class="subtle">全て消去</button>
+        <span class="spacer"></span>
+        <button type="submit" class="primary">閉じる</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="vendor/purify.min.js"></script>
+  <script src="vendor/marked.umd.js"></script>
+  <script src="vendor/highlight.min.js"></script>
+  <script src="vendor/highlight-extra.min.js"></script>
+  <script src="js/mask.js"></script>
+  <script src="js/vault.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

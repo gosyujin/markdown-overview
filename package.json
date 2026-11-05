@@ -1,0 +1,9 @@
+{
+  "name": "markdown-overview",
+  "private": true,
+  "description": "Claude の回答（Markdown）を見やすく表示するだけの静的ビューア。入力は保存も送信もしない。",
+  "scripts": {
+    "test": "node --test test/",
+    "serve": "python3 -m http.server 8000"
+  }
+}
