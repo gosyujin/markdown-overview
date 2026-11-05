@@ -19,7 +19,7 @@
     src: $('#src'), preview: $('#preview'), status: $('#status'),
     modeRaw: $('#mode-raw'), modeMask: $('#mode-mask'),
     btnRules: $('#btn-rules'), rulesCount: $('#rules-count'),
-    btnToggleInput: $('#btn-toggle-input'), btnClear: $('#btn-clear'), btnTheme: $('#btn-theme'),
+    inputPane: $('#input-pane'), btnPaste: $('#btn-paste'), btnToggleSrc: $('#btn-toggle-src'), btnClear: $('#btn-clear'), btnTheme: $('#btn-theme'),
     file: $('#file'),
     dialog: $('#rules-dialog'), rulesSrc: $('#rules-src'), rulesInfo: $('#rules-info'),
     pass: $('#pass'), rulesFile: $('#rules-file'),
@@ -290,10 +290,7 @@
   function loadFile(file) {
     if (!file) return;
     if (file.size > MAX_BYTES) { els.status.textContent = 'ファイルが大きすぎます（5MBまで）'; return; }
-    file.text().then(function (t) {
-      els.src.value = t;
-      render();
-    });
+    file.text().then(setText);
   }
 
   els.file.addEventListener('change', function () {
@@ -321,15 +318,41 @@
   });
 
   els.btnClear.addEventListener('click', function () {
-    els.src.value = '';
-    render();
-    els.src.focus();
+    setText('');
   });
 
-  els.btnToggleInput.addEventListener('click', function () {
-    var hidden = document.body.classList.toggle('input-hidden');
-    els.btnToggleInput.setAttribute('aria-pressed', String(hidden));
-    els.btnToggleInput.textContent = hidden ? '入力欄を表示' : '入力欄を隠す';
+  function setSrcOpen(open) {
+    els.src.hidden = !open;
+    els.inputPane.classList.toggle('open', open);
+    els.btnToggleSrc.setAttribute('aria-expanded', String(open));
+    els.btnToggleSrc.textContent = open ? '▲ 貼り付け欄を閉じる' : '▼ 貼り付け欄を開く';
+    if (open) els.src.focus();
+  }
+  els.btnToggleSrc.addEventListener('click', function () { setSrcOpen(els.src.hidden); });
+
+  function setText(text) {
+    els.src.value = text;
+    render();
+  }
+
+  // 「クリップボードから貼り付け」: 読み取り許可が得られない環境では、貼り付け欄を開いて手動貼り付けに誘導する
+  els.btnPaste.addEventListener('click', function () {
+    var p = navigator.clipboard && navigator.clipboard.readText ? navigator.clipboard.readText() : Promise.reject();
+    p.then(function (t) {
+      if (!t) { els.status.textContent = 'クリップボードが空です'; return; }
+      setText(t);
+    }, function () {
+      setSrcOpen(true);
+      els.status.textContent = '自動で読み取れませんでした。貼り付け欄に ⌘V / Ctrl+V で貼り付けてください';
+    });
+  });
+
+  // 入力欄以外にフォーカスがある状態での貼り付け（⌘V / Ctrl+V）をそのまま取り込む
+  document.addEventListener('paste', function (e) {
+    var t = e.target;
+    if (t && (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT')) return;
+    var text = e.clipboardData && e.clipboardData.getData('text/plain');
+    if (text) { e.preventDefault(); setText(text); }
   });
 
   /* ======================= モード / テーマ ======================= */

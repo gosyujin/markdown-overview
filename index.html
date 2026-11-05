@@ -26,27 +26,28 @@
       <button type="button" id="mode-mask" aria-pressed="false">Mask</button>
     </div>
     <button type="button" id="btn-rules">マスク設定 <span id="rules-count" class="count">0</span></button>
-    <button type="button" id="btn-toggle-input" aria-pressed="false">入力欄を隠す</button>
     <button type="button" id="btn-clear">クリア</button>
     <button type="button" id="btn-theme" title="テーマ切り替え">自動</button>
   </header>
 
   <main id="layout">
     <section id="input-pane" aria-label="入力">
-      <textarea id="src" autocomplete="off" autocapitalize="off" spellcheck="false"
-                placeholder="ここに Markdown を貼り付けてください（Claude の回答をそのまま貼れます）"></textarea>
       <div class="file-row">
         <label class="file-btn">
           <input type="file" id="file" accept=".md,.markdown,.txt,.text,text/*">
           ファイルを選択
         </label>
-        <span class="hint">または、ファイルをこのページにドロップ</span>
+        <button type="button" id="btn-paste">クリップボードから貼り付け</button>
+        <button type="button" id="btn-toggle-src" class="toggle" aria-expanded="false" aria-controls="src">▼ 貼り付け欄を開く</button>
+        <span class="hint">ファイルのドロップ、画面上での ⌘V / Ctrl+V でも読み込めます</span>
       </div>
+      <textarea id="src" hidden autocomplete="off" autocapitalize="off" spellcheck="false"
+                placeholder="ここに Markdown を貼り付けてください（Claude の回答をそのまま貼れます）"></textarea>
     </section>
 
     <article id="preview" class="md" aria-label="プレビュー">
       <div class="empty">
-        <p class="empty-title">左の入力欄に Markdown を貼り付けると、ここに表示されます。</p>
+        <p class="empty-title">上のバーから Markdown を読み込むと、ここに表示されます。</p>
         <ul>
           <li>コードブロックと表は、ホバー／フォーカスで「コピー」ボタンが出ます。</li>
           <li><b>Mask</b> に切り替えると、<b>マスク設定</b>の定義に従って語句を置換して表示します。</li>
