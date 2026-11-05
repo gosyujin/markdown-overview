@@ -2,7 +2,7 @@
 
 Claude の回答（Markdown）を **見やすく表示するためだけ** の静的ページです。ビルド不要、サーバー不要。
 
-公開先: https://gosyujin.github.io/markdown-overview/
+公開先: https://gosyujin.com/markdown-overview/
 
 ## 使い方
 
