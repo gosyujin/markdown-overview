@@ -12,6 +12,7 @@
 
   var Mask = window.MDO.Mask;
   var Vault = window.MDO.Vault;
+  var TableText = window.MDO.TableText;
 
   function $(sel) { return document.querySelector(sel); }
 
@@ -67,7 +68,10 @@
     var html = window.marked.parse(text, { gfm: true, breaks: false, async: false });
     var frag = window.DOMPurify.sanitize(html, purifyConfig);
     enhance(frag);
-    els.preview.replaceChildren(frag);
+    var body = document.createElement('div');
+    body.className = 'md-body';
+    body.appendChild(frag);
+    els.preview.replaceChildren(body);
     updateStatus(maskedCount);
   }
 
@@ -178,7 +182,8 @@
     wrap.className = 'block table-block';
     wrap.appendChild(makeHead('table', [
       button('コピー', 'tsv', '表をタブ区切りでコピー（Excel / スプレッドシート向け）'),
-      button('Markdown', 'md', '表をMarkdownでコピー')
+      button('Markdown', 'md', '表をMarkdownでコピー'),
+      button('テキスト', 'text', '表を罫線テキストでコピー（テキストメール向け）')
     ]));
     var scroll = document.createElement('div');
     scroll.className = 'table-scroll';
@@ -196,6 +201,12 @@
     return Array.prototype.map.call(table.rows, function (tr) {
       return Array.prototype.map.call(tr.cells, cellText).join('\t');
     }).join('\n');
+  }
+
+  function tableToRuledText(table) {
+    return TableText.render(Array.prototype.map.call(table.rows, function (tr) {
+      return Array.prototype.map.call(tr.cells, function (c) { return c.textContent; });
+    }));
   }
 
   function inlineToMd(node) {
@@ -265,7 +276,9 @@
       text = block.querySelector('pre').textContent.replace(/\n$/, '');
     } else {
       var table = block.querySelector('table');
-      text = btn.dataset.copy === 'md' ? tableToMarkdown(table) : tableToTsv(table);
+      text = btn.dataset.copy === 'md' ? tableToMarkdown(table)
+        : btn.dataset.copy === 'text' ? tableToRuledText(table)
+        : tableToTsv(table);
     }
     copyText(text).then(function () { flash(btn, 'コピーしました', 'done'); },
                         function () { flash(btn, '失敗しました', 'fail'); });
