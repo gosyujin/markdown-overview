@@ -50,6 +50,12 @@
     return { rules: rules, errors: errors };
   }
 
+  // 私用領域の文字を目印に使う（通常の文章には現れない）
+  var MARK_OPEN = '\uE000';
+  var MARK_CLOSE = '\uE001';
+  var MARK_RE = /[\uE000\uE001]/g;
+  function stripMarks(s) { return String(s).replace(MARK_RE, ''); }
+
   function escapeRegExp(s) {
     return s.replace(/[.*+?^${}()|[\]\\\/-]/g, '\\$&');
   }
@@ -58,10 +64,14 @@
    * ルールを一括置換する。
    * - 長い語を優先（「丸丸システム」が「丸丸」より先に当たる）
    * - 1パスで置換するので、A→B と B→C があっても連鎖しない
+   * options.mark が真なら、置換した箇所を MARK_OPEN / MARK_CLOSE で囲む（表示側で黄色マーカーにするための目印）。
+   * その場合、入力に元から含まれる目印文字は除去する。
    * @returns {{text:string, count:number}}
    */
-  function apply(text, rules) {
+  function apply(text, rules, options) {
+    var mark = !!(options && options.mark);
     text = String(text == null ? '' : text);
+    if (mark) text = stripMarks(text);
     if (!rules || !rules.length) return { text: text, count: 0 };
     var map = Object.create(null);
     var terms = [];
@@ -76,10 +86,10 @@
     var count = 0;
     var out = text.replace(re, function (m) {
       count++;
-      return map[m];
+      return mark ? MARK_OPEN + stripMarks(map[m]) + MARK_CLOSE : map[m];
     });
     return { text: out, count: count };
   }
 
-  return { parseRules: parseRules, apply: apply };
+  return { parseRules: parseRules, apply: apply, stripMarks: stripMarks, MARK_OPEN: MARK_OPEN, MARK_CLOSE: MARK_CLOSE };
 });

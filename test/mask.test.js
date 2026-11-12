@@ -72,3 +72,20 @@ test('Vault: 平文JSON以外はisEncryptedがfalse', () => {
   assert.equal(Vault.isEncrypted('a => b'), false);
   assert.equal(Vault.isEncrypted('{"x":1}'), false);
 });
+
+test('apply: mark オプションで置換箇所を目印文字で囲む', () => {
+  const { rules } = Mask.parseRules('丸丸, X');
+  const r = Mask.apply('丸丸と丸丸', rules, { mark: true });
+  assert.equal(r.text, 'XとX');
+  assert.equal(r.count, 2);
+});
+
+test('apply: mark 時は入力中の目印文字を除去する', () => {
+  const { rules } = Mask.parseRules('a, b');
+  assert.equal(Mask.apply('a', rules, { mark: true }).text, 'b');
+});
+
+test('apply: mark なしでは従来どおり目印を付けない', () => {
+  const { rules } = Mask.parseRules('a, b');
+  assert.equal(Mask.apply('a', rules).text, 'b');
+});

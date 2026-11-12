@@ -60,7 +60,7 @@
 
     var text = raw;
     if (state.mode === 'mask') {
-      var r = Mask.apply(raw, state.rules);
+      var r = Mask.apply(raw, state.rules, { mark: true });
       text = r.text;
       maskedCount = r.count;
     }
@@ -68,6 +68,7 @@
     var html = window.marked.parse(text, { gfm: true, breaks: false, async: false });
     var frag = window.DOMPurify.sanitize(html, purifyConfig);
     enhance(frag);
+    if (state.mode === 'mask') highlightMasked(frag);
     var body = document.createElement('div');
     body.className = 'md-body';
     body.appendChild(frag);
@@ -83,6 +84,52 @@
     if (state.mode !== 'mask') { els.status.textContent = ''; return; }
     if (!state.rules.length) { els.status.textContent = 'Mask: ルール未設定'; return; }
     els.status.textContent = 'Mask: ' + maskedCount + ' 箇所を置換（ルール ' + state.rules.length + ' 件）';
+  }
+
+  /* ----------- マスク箇所の黄色マーカー ----------- */
+
+  // Mask.apply が置換箇所を MARK_OPEN … MARK_CLOSE で囲んでいる。
+  // 描画後の DOM を文書順にたどり、囲まれた範囲を <mark class="masked"> にする（要素をまたいでも対応）。
+  function highlightMasked(root) {
+    var OPEN = Mask.MARK_OPEN, CLOSE = Mask.MARK_CLOSE;
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    var nodes = [];
+    for (var n = walker.nextNode(); n; n = walker.nextNode()) nodes.push(n);
+    var inside = false;
+    nodes.forEach(function (node) {
+      var v = node.nodeValue;
+      if (!inside && v.indexOf(OPEN) < 0 && v.indexOf(CLOSE) < 0) return;
+      var frag = document.createDocumentFragment();
+      var buf = '';
+      function flush() {
+        if (!buf) return;
+        if (inside) {
+          var m = document.createElement('mark');
+          m.className = 'masked';
+          m.textContent = buf;
+          frag.appendChild(m);
+        } else {
+          frag.appendChild(document.createTextNode(buf));
+        }
+        buf = '';
+      }
+      for (var i = 0; i < v.length; i++) {
+        var ch = v.charAt(i);
+        if (ch === OPEN) { flush(); inside = true; }
+        else if (ch === CLOSE) { flush(); inside = false; }
+        else buf += ch;
+      }
+      flush();
+      node.replaceWith(frag);
+    });
+    // 属性（リンク先など）に紛れた目印文字は取り除く
+    root.querySelectorAll('*').forEach(function (el) {
+      Array.prototype.forEach.call(el.attributes, function (a) {
+        // marked は URL 中の目印文字を %EE%80%80 / %EE%80%81 に変換する
+        var c = Mask.stripMarks(a.value).replace(/%EE%80%8[01]/gi, '');
+        if (c !== a.value) el.setAttribute(a.name, c);
+      });
+    });
   }
 
   /* ----------- DOM の後処理 ----------- */

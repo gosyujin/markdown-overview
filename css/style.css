@@ -18,6 +18,8 @@
   --btn-bg: #ffffff;
   --btn-hover: #f0eee8;
   --shadow: 0 1px 2px rgba(0, 0, 0, .06);
+  --mask-mark: #fff176;
+  --mask-mark-fg: #24292f;
 
   /* シンタックスハイライト */
   --t-keyword: #cf222e;
@@ -41,7 +43,7 @@
   --bg: #17171a; --panel: #1e1e22; --fg: #e6e6e6; --muted: #9aa0a6; --border: #33343a;
   --link: #6cb2ff; --accent: #f0884a; --accent-soft: #2a211b; --quote-bg: #231f1c;
   --icode-bg: #2b2420; --icode-fg: #ffb38a; --code-bg: #131316; --code-head: #1a1a1f;
-  --th-bg: #28282e; --zebra: #212126; --btn-bg: #26262b; --btn-hover: #31313a; --shadow: none;
+  --th-bg: #28282e; --zebra: #212126; --btn-bg: #26262b; --btn-hover: #31313a; --shadow: none; --mask-mark: #a68a00; --mask-mark-fg: #fff;
   --t-keyword: #ff7b72; --t-string: #a5d6ff; --t-number: #79c0ff; --t-comment: #8b949e;
   --t-title: #d2a8ff; --t-type: #ffa657; --t-attr: #7ee787; --t-meta: #d2a8ff;
   --t-add-bg: #12261e; --t-del-bg: #2d1517;
@@ -51,7 +53,7 @@
     --bg: #17171a; --panel: #1e1e22; --fg: #e6e6e6; --muted: #9aa0a6; --border: #33343a;
     --link: #6cb2ff; --accent: #f0884a; --accent-soft: #2a211b; --quote-bg: #231f1c;
     --icode-bg: #2b2420; --icode-fg: #ffb38a; --code-bg: #131316; --code-head: #1a1a1f;
-    --th-bg: #28282e; --zebra: #212126; --btn-bg: #26262b; --btn-hover: #31313a; --shadow: none;
+    --th-bg: #28282e; --zebra: #212126; --btn-bg: #26262b; --btn-hover: #31313a; --shadow: none; --mask-mark: #a68a00; --mask-mark-fg: #fff;
     --t-keyword: #ff7b72; --t-string: #a5d6ff; --t-number: #79c0ff; --t-comment: #8b949e;
     --t-title: #d2a8ff; --t-type: #ffa657; --t-attr: #7ee787; --t-meta: #d2a8ff;
     --t-add-bg: #12261e; --t-del-bg: #2d1517;
@@ -285,3 +287,10 @@ dialog::backdrop { background: rgba(0, 0, 0, .45); }
 @media (max-width: 700px) {
   .hint { display: none; }
 }
+
+/* ---------- マスク箇所のマーカー（ブラウザ検索のオレンジと区別できる黄色） ---------- */
+mark.masked {
+  background: var(--mask-mark); color: var(--mask-mark-fg);
+  border-radius: 2px; padding: 0 1px;
+}
+mark.masked code, .md :not(pre) > code mark.masked { color: inherit; }
